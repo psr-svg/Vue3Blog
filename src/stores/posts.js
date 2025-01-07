@@ -1,53 +1,60 @@
-import { defineStore } from 'pinia'
-import postsJson from './../assets/posts.json'
+import { defineStore } from 'pinia';
 
-export const usePostsStore = defineStore('postsStore', {
+export const useBlogsStore = defineStore('blogsStore', {
     state: () => ({
-        allPosts: [],
-        post: null,
-        search: ''
-    }),
+        blogs: [],
+        blog: null,
+        currentPage: 1,
+        blogsPerPage: 10,
+        searchQuery: '',
+      }),
 
     getters: {
-        searchedPosts(state){
-            // TODO
-        }
-    },
+        filteredBlogs: (state) => {
+          return state.blogs.filter((blog) =>
+            blog.title.toLowerCase().includes(state.searchQuery.toLowerCase())
+          );
+        },
+        paginatedBlogs: (state) => {
+          const start = (state.currentPage - 1) * state.blogsPerPage;
+          const end = start + state.blogsPerPage;
+          return state.filteredBlogs.slice(start, end);
+        },
+        totalPages: (state) => Math.ceil(state.filteredBlogs.length / state.blogsPerPage),
+      },
     actions: {
-        getAllPosts(){ //Get all posts
-
-            this.posts = postsJson;
-        },
-
-        getPost(id){
-            const postHolder = null;
-            if(Object.is(this.posts, null)){
-                getAllPosts();
-            }
-            else{
-                this.posts.forEach(post => {
-                    if(post.id == id){
-                        postHolder = post;
-                    }
-                });
-                if(Object.is(postHolder, null)){
-                    console.log("Unable to find the BlogPost with Id");
-                }
+        async loadBlogs() {
+            try {
+                // Load blogs from local JSON file
+                const jsonResponse = await fetch('/src/assets/posts.json'); // Adjust the path if necessary
+                this.blogs = await jsonResponse.json();
+            } catch (error) {
+                console.error('Error loading blogs:', error);
             }
         },
 
-        addBlogToPosts(UId, BId, Title, Body){
-            if(Object.is(this.posts, null)){
-                getAllPosts();
+        getBlog(blogId) {
+            const blog = this.blogs.find((blog) => blog.id == blogId);
+            if (blog) {
+                this.blog = blog;
             }
-            else{
-                this.posts.value.push({
-                    uid: UId,
-                    id: BId,
-                    title: Title,
-                    body: Body
-                });
-            }
+        },
+
+        setCurrentPage(page) {
+            this.currentPage = page;
+        },
+
+        setSearchQuery(query) {
+            this.searchQuery = query;
+            this.currentPage = 1; // Reset to the first page on search
+          },
+
+        async addBlogToPosts(newBlog){
+            try {
+                this.blogs.push(newBlog);
+              } catch (error) {
+                console.error(error.message);
+              }
         }
     }
 })

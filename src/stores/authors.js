@@ -1,24 +1,27 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { usePostsStore } from './posts'
-import { authors } from '../assets/users.json'
 
-export const useAuthorStore = defineStore('authorStore', {
+export const AuthorStore = defineStore('authorStore', {
   state: () => ({
     authors: [],
-    author: null
+    author: null,
   }),
-  getters: {
-    getAuthors: (state) => {
-        this.authors = authors;
-    }
-  },
+
   actions: {
-    getAuthors(){
-        //TODO
-    }
-  }
-
-
+    async getAuthors() {
+      try {
+        const jsonResponse = await fetch('/src/assets/users.json');
+        this.authors = await jsonResponse.json();
+      } catch (error) {
+        console.error('Error loading users:', error);
+      }
+    },
+  },
+  getters: {
+    getAuthorNameById: (state) => (id) => {
+      const author = state.authors.find((author) => author.id === id);
+      return author ? author.name : 'Unknown Author';
+    },
+  },
 
 })
